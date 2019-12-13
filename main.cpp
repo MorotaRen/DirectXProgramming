@@ -95,7 +95,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//2.デバイスコンテキストを生成する
 	//3.スワップチェインを生成する
 	//4.バックバッファと取得してレンダーターゲットビューを生成する
-	//------リソース準備-------------------
+	//--------リソース準備-----------------
 	//5.頂点シェーダを生成する
 	//6.ピクセルシェーダを生成する
 	//7.インプットレイアウトを生成する
@@ -201,7 +201,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//使い終わったので解放ですね
 	RELEASE(backbuffer);
 
-	//頂点シェーダーの作成
+	//頂点シェーダーの読み込みと生成作成
 	/// CreateVertexShader
 	///	const void         *pShaderBytecode		:コンパイル済みシェーダのバイナリデータ
 	///	SIZE_T             BytecodeLength		:バイナリデータサイズ(Byte)
@@ -209,7 +209,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	///	ID3D11VertexShader **ppVertexShader		:生成されたシェーダー
 
 	auto vsByteCode = LoadBinaryData(L"VertexShader.cso");
-
 	hr = g_pd3dDevice->CreateVertexShader(
 	&vsByteCode->front(),
 	vsByteCode->size(),
@@ -248,13 +247,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//頂点バッファの生成
 	Vertex vertices[] = {
-		{0.0f,1.0f,0.5f},
-		{1.0f,0.0f,0.5f},
-		{-1.0f,0.0f,0.5f}
+		{-0.5f,-0.5f,+0.0f},
+		{+0.0f,+0.5f,+0.0f},
+		{+0.5f,-0.5f,+0.0f}
 	};
 
 	D3D11_BUFFER_DESC vbDesc = {};
-	vbDesc.ByteWidth = ARRAYSIZE(vertices);
+	vbDesc.ByteWidth = sizeof(vertices);
 	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	D3D11_SUBRESOURCE_DATA vbSubResource = {};
 	vbSubResource.pSysMem = vertices;
@@ -262,6 +261,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	if (FAILED(hr)) {
 		MessageBox(0, L"CreateBuffer Failed!", 0, 0);
 	}
+
+	//ビューポートを設定する
+	D3D11_VIEWPORT viewport = {};
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = 640;
+	viewport.Height = 480;
+	viewport.MinDepth = 0;
+	viewport.MaxDepth = 1.0f;
+	g_pImmediateContext->RSSetViewports(1,&viewport);
+
 	//以下メッセージループ
 	/// GetMessage(LPMSG lpMsg , HWND hWnd , UINT wMsgFilterMin , UINT wMsgFilterMax);
 	/// LPMSG			:MSG構造体のポインタを渡す
