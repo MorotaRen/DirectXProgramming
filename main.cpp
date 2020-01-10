@@ -1,4 +1,5 @@
 #include <windows.h>
+
 //Direct3Dを使うためのライブラリ
 #include <d3d11_4.h>
 #pragma comment(lib,"d3d11.lib")
@@ -260,9 +261,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//{+0.5f,+0.5f,+0.0f},//左上
 		//{-0.5f,-0.5f,+0.0f},//右下
 		//{-0.5f,+0.5f,+0.0f},//右上
-		//{+0.5f,+0.5f,+0.0f}	//左上
+		//{+0.5f,+0.5f,+0.0f} //左上
 	};
 
+	//頂点バッファの作成
 	D3D11_BUFFER_DESC vbDesc = {};
 	vbDesc.ByteWidth = sizeof(vertices);
 	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -273,7 +275,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"CreateBuffer Failed!", 0, 0);
 	}
 
-	//インデックスの生成
+	//インデックスバッファの作成
 	uint16_t indices[] = {
 		0,1,2,
 		2,1,3
@@ -287,6 +289,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	if (FAILED(hr)) {
 		MessageBox(0, L"CreateBuffer Failed!", 0, 0);
 	}
+
 	//ビューポートを設定する
 	D3D11_VIEWPORT viewport = {};
 	viewport.TopLeftX = 0;
@@ -326,13 +329,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		UINT offset = 0;
 		g_pImmediateContext->IASetVertexBuffers(0,1,&g_pVertexBuffer,&stride,&offset);
 		g_pImmediateContext->IASetInputLayout(g_pInputLayout);
-		g_pImmediateContext->IASetIndexBuffer(g_pIndexBuffer,DXGI_FORMAT_R16_UINT,0);
-		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP	頂点を共有する(複雑なポリゴンは無理)
-		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP	頂点を共有する(複雑なポリゴンは無理)※共有できる頂点があることが前提
+		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST		頂点配列をそのまま
 		g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	//頂点データの扱い(データを使って何を表示するのか)
+
+		g_pImmediateContext->IASetIndexBuffer(g_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);	//	インデックスバッファ使用時に必須
+		//DXGI_FORMAT_R16_UINT R16...頂点配列の型。16bitの型なのか32bitの型なのか
 		g_pImmediateContext->VSSetShader(g_pVertexShader,0,0);
 		g_pImmediateContext->PSSetShader(g_pPixelShader, 0,0);
-		g_pImmediateContext->Draw(ARRAYSIZE(vertices),0);		//頂点数と何番目から描画するか
+
+		//高速化するならマテリアルで分けてDrawを呼ぶ回数を減らすといい…
+
+		//g_pImmediateContext->Draw(ARRAYSIZE(vertices),0);			//頂点数と何番目から描画するか
+		g_pImmediateContext->DrawIndexed(ARRAYSIZE(indices),0,0);	//インデックスバッファ時の描画
+
 		g_pSwapChain->Present(1,0);			//バックバッファに描画された内容をフロントバッファに
 
 	}
@@ -402,6 +412,7 @@ std::shared_ptr<std::vector<char>> LoadBinaryData(const std::wstring &filename) 
 		// 読み込み
 		ifs.read(&result->front(), size);
 
+		//閉じる
 		ifs.close();
 	}
 
