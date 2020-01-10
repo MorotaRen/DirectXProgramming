@@ -32,6 +32,7 @@ ID3D11VertexShader			*g_pVertexShader = nullptr;
 ID3D11PixelShader			*g_pPixelShader = nullptr;
 ID3D11InputLayout			*g_pInputLayout = nullptr;
 ID3D11Buffer				*g_pVertexBuffer = nullptr;
+ID3D11Buffer				*g_pIndexBuffer = nullptr;
 
 //頂点データ
 struct Vertex
@@ -247,9 +248,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//頂点バッファの生成
 	Vertex vertices[] = {
-		{-0.5f,-0.5f,+0.0f},
-		{+0.0f,+0.5f,+0.0f},
-		{+0.5f,-0.5f,+0.0f}
+		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP
+		{-0.5f,+0.5f,+0.0f},//0
+		{+0.5f,+0.5f,+0.0f},//1
+		{-0.5f,-0.5f,+0.0f},//2
+		{+0.5f,-0.5f,+0.0f},//3
+
+		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+		//{+0.5f,-0.5f,+0.0f},//左下
+		//{-0.5f,-0.5f,+0.0f},//右下
+		//{+0.5f,+0.5f,+0.0f},//左上
+		//{-0.5f,-0.5f,+0.0f},//右下
+		//{-0.5f,+0.5f,+0.0f},//右上
+		//{+0.5f,+0.5f,+0.0f}	//左上
 	};
 
 	D3D11_BUFFER_DESC vbDesc = {};
@@ -262,6 +273,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"CreateBuffer Failed!", 0, 0);
 	}
 
+	//インデックスの生成
+	uint16_t indices[] = {
+		0,1,2,
+		2,1,3
+	};
+	D3D11_BUFFER_DESC ibDesc = {};
+	ibDesc.ByteWidth = sizeof(vertices);
+	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	D3D11_SUBRESOURCE_DATA ibSubResource = {};
+	ibSubResource.pSysMem = indices;
+	hr = g_pd3dDevice->CreateBuffer(&ibDesc, &ibSubResource, &g_pIndexBuffer);
+	if (FAILED(hr)) {
+		MessageBox(0, L"CreateBuffer Failed!", 0, 0);
+	}
 	//ビューポートを設定する
 	D3D11_VIEWPORT viewport = {};
 	viewport.TopLeftX = 0;
@@ -301,10 +326,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		UINT offset = 0;
 		g_pImmediateContext->IASetVertexBuffers(0,1,&g_pVertexBuffer,&stride,&offset);
 		g_pImmediateContext->IASetInputLayout(g_pInputLayout);
+		g_pImmediateContext->IASetIndexBuffer(g_pIndexBuffer,DXGI_FORMAT_R16_UINT,0);
+		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP	頂点を共有する(複雑なポリゴンは無理)
+		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 		g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	//頂点データの扱い(データを使って何を表示するのか)
 		g_pImmediateContext->VSSetShader(g_pVertexShader,0,0);
 		g_pImmediateContext->PSSetShader(g_pPixelShader, 0,0);
-		g_pImmediateContext->Draw(3,0);		//頂点数と何番目から描画するか
+		g_pImmediateContext->Draw(ARRAYSIZE(vertices),0);		//頂点数と何番目から描画するか
 		g_pSwapChain->Present(1,0);			//バックバッファに描画された内容をフロントバッファに
 
 	}
