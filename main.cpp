@@ -314,7 +314,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//--------------------コンスタントバッファの生成--------------------//
 	ConstantBuffer cb;
 
-	cb.world = DirectX::XMMatrixIdentity();
+	//cb.world = DirectX::XMMatrixIdentity();
+	auto t  = DirectX::XMMatrixTranslation(1.0f,0.0f,0.0f);
+	auto rx = DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(45.0f));
+	auto ry = DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(45.0f));
+	auto rz = DirectX::XMMatrixRotationZ(DirectX::XMConvertToRadians(45.0f));
+	auto s = DirectX::XMMatrixScaling(2.0f,2.0f,2.0f);
+	cb.world =  s * rz * t;//SRT(Scale Rotation Translation)
 
 	DirectX::XMVECTOR eye = { 0.0f,0.0f,-3.0f };
 	DirectX::XMVECTOR at =  { 0.0f,0.0f, 0.0f };
@@ -324,10 +330,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float aspectRatio = 640.0f / 480.0f;
 	float nearZ = 0.3f,farZ = 1000.0f;
 	cb.projection = DirectX::XMMatrixPerspectiveFovLH(fovAngleY,aspectRatio,nearZ,farZ);
-	//行列を転置(Transpose)させる
+	//行列を転置(Transpose)させる...これは行優先の問題
+	//行優先(DX)を列優先(Shader)にする
+	cb.world = DirectX::XMMatrixTranspose(cb.world);
 	cb.view = DirectX::XMMatrixTranspose(cb.view);
 	cb.projection = DirectX::XMMatrixTranspose(cb.projection);
-	/// LH,RHは右手座標系か左手座標系か…
+	//LH,RHは右手座標系か左手座標系か…
 	D3D11_BUFFER_DESC cbDesc = {};
 	cbDesc.ByteWidth = sizeof(cb);
 	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
