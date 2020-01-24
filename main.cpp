@@ -1,6 +1,6 @@
 #include <windows.h>
 
-//Direct3Dを使うためのライブラリ
+//----------------------------------Direct3Dを使うためのライブラリ----------------------------------//
 #include <d3d11_4.h>
 #pragma comment(lib,"d3d11.lib")
 
@@ -9,11 +9,11 @@
 #include <fstream>
 #include <DirectXMath.h>
 
-//先に宣言
+//----------------------------------先に宣言----------------------------------//
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 std::shared_ptr<std::vector<char>> LoadBinaryData(const std::wstring &filename);
 
-//解放マクロ
+//----------------------------------解放マクロ----------------------------------//
 //"\"を入れたら改行できるが基本一行
 #define RELEASE(x) \
 do{\
@@ -24,7 +24,7 @@ do{\
 }while (0);\
 
 
-//グローバル変数
+//----------------------------------グローバル変数----------------------------------//
 HWND						g_hwnd;
 IDXGISwapChain				*g_pSwapChain = nullptr;
 ID3D11Device				*g_pd3dDevice = nullptr;
@@ -37,13 +37,13 @@ ID3D11Buffer				*g_pVertexBuffer = nullptr;
 ID3D11Buffer				*g_pIndexBuffer = nullptr;
 ID3D11Buffer				*g_pConstantBuffer = nullptr;
 
-//頂点データ
+//----------------------------------頂点データ----------------------------------//
 struct Vertex
 {
 	float x, y, z;
 };
 
-//コンスタントバッファの元データ(16バイト区切り)
+//----------------コンスタントバッファの元データ(16バイト区切り)---------------------//
 struct ConstantBuffer
 {
 	DirectX::XMMATRIX world;
@@ -78,13 +78,13 @@ bool isRunning(MSG* msg) {
 /// int			:初期表示方法を指定できる
 /// </summary>-------------------------------
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-	//ウィンドウを作ります
+	//	[ウィンドウの作り方]
 	//1	ウィンドウクラスの作成
 	//2	作ったものをWindowsに登録
 	//3	ウィンドウ生成
 
 
-	//ウィンドウクラスのデータ作成
+	//--------------------ウィンドウクラスのデータ作成--------------------//
 	WNDCLASS wc;
 	wc.style = CS_HREDRAW | CS_VREDRAW;			//Windowスタイル
 	wc.lpfnWndProc = WindowProc;				//WindowProcedure
@@ -97,8 +97,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	wc.lpszMenuName = NULL;						//メニューネーム
 	wc.lpszClassName = L"Title";				//ウィンドウクラスの名前
 
-	//ウィンドウクラスの登録
-	RegisterClass(&wc);
+	RegisterClass(&wc);//ウィンドウクラスの登録
 
 	//ウィンドウを生成(生成したウィンドウクラス)
 	g_hwnd = CreateWindow(L"Title", L"Title", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 0, 0, 640, 480, 0, 0, wc.hInstance, 0);
@@ -189,7 +188,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0,L"D3D11CreateDeviceAndSwapChain Failed!",0,0);
 	}
 
-	//バックバッファ取得
+	//--------------------バックバッファ取得--------------------//
 	ID3D11Texture2D *backbuffer = nullptr;
 	/// GetBuffer(UINT,REFID,void**)
 	/// UINT	:バッファインデックス(基本0)
@@ -202,7 +201,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"GetBuffer Failed!", 0, 0);
 	}
 
-	//レンダーターゲットビュー作成
+	//----------------レンダーターゲットビュー作成----------------//
 	/// CreateRenderTargetView(ID3D11Resource*,const D3D11_RENDER_TARGET_VIEW_DESC *,ID3D11RenderTargetView**);
 	/// ID3D11Resource					:作成するバッファのリソース
 	/// D3D11_RENDER_TARGET_VIEW_DESC	:作成するViewの設定,nullptrでデフォルト設定
@@ -215,7 +214,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//使い終わったので解放ですね
 	RELEASE(backbuffer);
 
-	//頂点シェーダーの読み込みと生成作成
+	//--------------------頂点シェーダーの読み込みと生成作成--------------------//
 	/// CreateVertexShader
 	///	const void         *pShaderBytecode		:コンパイル済みシェーダのバイナリデータ
 	///	SIZE_T             BytecodeLength		:バイナリデータサイズ(Byte)
@@ -232,7 +231,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"CreateVertexShader Failed!", 0, 0);
 	}
 
-	//ピクセルシェーダの作成
+	//--------------------ピクセルシェーダの作成--------------------//
 	auto psByteCode = LoadBinaryData(L"PixelShader.cso");
 	hr = g_pd3dDevice->CreatePixelShader(
 		&psByteCode->front(),
@@ -243,7 +242,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"CreatePixelShader Failed!", 0, 0);
 	}
 
-	//インプットレイアウトを生成する
+	//--------------------インプットレイアウトを生成する--------------------//
 	/// 頂点は...
 	/// 座標　法線ベクトル　UV座標　接線ベクトル　バイノーマル　スキンウェイト　...色々持ってる
 
@@ -259,7 +258,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 	///ARRAYSIZEは配列の要素数を返してくれるぞ///
 
-	//頂点バッファの生成
+	//--------------------頂点バッファの生成--------------------//
 	Vertex vertices[] = {
 		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP
 		{-0.5f,+0.5f,+0.0f},//0
@@ -276,7 +275,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//{+0.5f,+0.5f,+0.0f} //左上
 	};
 
-	//頂点バッファの作成
+	//--------------------頂点バッファの作成--------------------//
 	D3D11_BUFFER_DESC vbDesc = {};
 	vbDesc.ByteWidth = sizeof(vertices);
 	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -287,7 +286,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"CreateBuffer(g_pVertexBuffer) Failed!", 0, 0);
 	}
 
-	//インデックスバッファの作成
+	//--------------------インデックスバッファの作成--------------------//
 	uint16_t indices[] = {
 		0,1,2,
 		2,1,3
@@ -302,7 +301,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"CreateBuffer(g_pIndexBuffer) Failed!", 0, 0);
 	}
 
-	//ビューポートを設定する
+	//--------------------ビューポートを設定する--------------------//
 	D3D11_VIEWPORT viewport = {};
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
@@ -312,7 +311,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	viewport.MaxDepth = 1.0f;
 	g_pImmediateContext->RSSetViewports(1,&viewport);
 
-	//コンスタントバッファの生成
+	//--------------------コンスタントバッファの生成--------------------//
 	ConstantBuffer cb;
 
 	cb.world = DirectX::XMMatrixIdentity();
@@ -325,12 +324,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float aspectRatio = 640.0f / 480.0f;
 	float nearZ = 0.3f,farZ = 1000.0f;
 	cb.projection = DirectX::XMMatrixPerspectiveFovLH(fovAngleY,aspectRatio,nearZ,farZ);
+	//行列を転置(Transpose)させる
+	cb.view = DirectX::XMMatrixTranspose(cb.view);
+	cb.projection = DirectX::XMMatrixTranspose(cb.projection);
 	/// LH,RHは右手座標系か左手座標系か…
 	D3D11_BUFFER_DESC cbDesc = {};
 	cbDesc.ByteWidth = sizeof(cb);
 	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	D3D11_SUBRESOURCE_DATA cbSubResource = {};
-	cbSubResource.pSysMem = indices;
+	cbSubResource.pSysMem = &cb;
 	hr = g_pd3dDevice->CreateBuffer(&cbDesc, &cbSubResource, &g_pConstantBuffer);
 	if (FAILED(hr)) {
 		MessageBox(0, L"CreateBuffer(g_pConstantBuffer) Failed!", 0, 0);
@@ -338,7 +340,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-	//以下メッセージループ
+	//--------------------以下メッセージループ--------------------//
 	/// GetMessage(LPMSG lpMsg , HWND hWnd , UINT wMsgFilterMin , UINT wMsgFilterMax);
 	/// LPMSG			:MSG構造体のポインタを渡す
 	/// HWND			:メッセージを受け取るウィンドウハンドルを渡す
@@ -372,7 +374,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	//頂点データの扱い(データを使って何を表示するのか)
 
 		g_pImmediateContext->IASetIndexBuffer(g_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);	//	インデックスバッファ使用時に必須
-		g_pImmediateContext->VSSetConstantBuffers(0,1,&g_pConstantBuffer);
+		g_pImmediateContext->VSSetConstantBuffers(0,1,&g_pConstantBuffer);//(最初,何番目までか,バッファ)
 		//DXGI_FORMAT_R16_UINT R16...頂点配列の型。16bitの型なのか32bitの型なのか
 		g_pImmediateContext->VSSetShader(g_pVertexShader,0,0);
 		g_pImmediateContext->PSSetShader(g_pPixelShader, 0,0);
