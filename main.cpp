@@ -4,12 +4,13 @@
 #include <d3d11_4.h>
 #pragma comment(lib,"d3d11.lib")
 
+//-------------------------------------------ライブラリ--------------------------------------------//
 #include <string>
 #include <vector>
 #include <fstream>
 #include <DirectXMath.h>
 
-//----------------------------------先に宣言----------------------------------//
+//----------------------------------先に宣言------------------------------------//
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 std::shared_ptr<std::vector<char>> LoadBinaryData(const std::wstring &filename);
 
@@ -25,17 +26,17 @@ do{\
 
 
 //----------------------------------グローバル変数----------------------------------//
-HWND						g_hwnd;
-IDXGISwapChain				*g_pSwapChain = nullptr;
-ID3D11Device				*g_pd3dDevice = nullptr;
-ID3D11DeviceContext			*g_pImmediateContext = nullptr;
-ID3D11RenderTargetView		*g_renderTargetView = nullptr;
-ID3D11VertexShader			*g_pVertexShader = nullptr;
-ID3D11PixelShader			*g_pPixelShader = nullptr;
-ID3D11InputLayout			*g_pInputLayout = nullptr;
-ID3D11Buffer				*g_pVertexBuffer = nullptr;
-ID3D11Buffer				*g_pIndexBuffer = nullptr;
-ID3D11Buffer				*g_pConstantBuffer = nullptr;
+HWND						g_hwnd;									//ウィンドウハンドル
+IDXGISwapChain				*g_pSwapChain = nullptr;				//スワップチェイン
+ID3D11Device				*g_pd3dDevice = nullptr;				//デバイス
+ID3D11DeviceContext			*g_pImmediateContext = nullptr;			//コンテキスト
+ID3D11RenderTargetView		*g_renderTargetView = nullptr;			//レンダーターゲットビュー
+ID3D11VertexShader			*g_pVertexShader = nullptr;				//バーテックスシェーダー
+ID3D11PixelShader			*g_pPixelShader = nullptr;				//ピクセルシェーダー
+ID3D11InputLayout			*g_pInputLayout = nullptr;				//インプットレイアウト
+ID3D11Buffer				*g_pVertexBuffer = nullptr;				//バーテックスバッファ
+ID3D11Buffer				*g_pIndexBuffer = nullptr;				//インデックスバッファ
+ID3D11Buffer				*g_pConstantBuffer = nullptr;			//コンスタントバッファ
 
 //----------------------------------頂点データ----------------------------------//
 struct Vertex
@@ -97,9 +98,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	wc.lpszMenuName = NULL;						//メニューネーム
 	wc.lpszClassName = L"Title";				//ウィンドウクラスの名前
 
-	RegisterClass(&wc);//ウィンドウクラスの登録
+	//--------------------ウィンドウクラスの登録-------------------------//
+	RegisterClass(&wc);
 
-	//ウィンドウを生成(生成したウィンドウクラス)
+	//------------------------ウィンドウの生成--------------------------//
 	g_hwnd = CreateWindow(L"Title", L"Title", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 0, 0, 640, 480, 0, 0, wc.hInstance, 0);
 
 
@@ -326,6 +328,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	DirectX::XMVECTOR at =  { 0.0f,0.0f, 0.0f };
 	DirectX::XMVECTOR up =  { 0.0f,1.0f, 0.0f };
 	cb.view = DirectX::XMMatrixLookAtLH(eye,at,up);
+
 	float fovAngleY = DirectX::XMConvertToRadians(45.0f);
 	float aspectRatio = 640.0f / 480.0f;
 	float nearZ = 0.3f,farZ = 1000.0f;
