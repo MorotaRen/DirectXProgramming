@@ -316,30 +316,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	//--------------------インデックスバッファの作成--------------------//
-	uint16_t indices[] = {
-		0,1,2,
-		2,1,3,
 
-		4,5,6,
-		6,5,7,
+	//手打ち
+	//uint16_t indices[] = {
+	//	0,1,2,
+	//	2,1,3,
+	//	4,5,6,
+	//	6,5,7,
+	//	8,9,10,
+	//	10,9,11,
+	//	12,13,14,
+	//	14,13,15,
+	//	16,17,18,
+	//	18,17,19,
+	//	20,21,22,
+	//	22,21,23
+	//};
 
-		8,9,10,
-		10,9,11,
-
-		12,13,14,
-		14,13,15,
-
-		16,17,18,
-		18,17,19,
-
-		20,21,22,
-		22,21,23
-	};
+	std::vector<uint16_t> indices;
+	uint16_t indicesBase[] = { 0,1,2,2,1,3 };
+	for (int i = 0; i < 6;i++) {
+		for (int j = 0; j < 6; j++) {
+			indices.push_back(indicesBase[j] + (i*4));
+		}
+	}
 	D3D11_BUFFER_DESC ibDesc = {};
-	ibDesc.ByteWidth = sizeof(vertices);
+	ibDesc.ByteWidth = indices.size() * sizeof(uint16_t);
 	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	D3D11_SUBRESOURCE_DATA ibSubResource = {};
-	ibSubResource.pSysMem = indices;
+	ibSubResource.pSysMem = &indices.front();
 	hr = g_pd3dDevice->CreateBuffer(&ibDesc, &ibSubResource, &g_pIndexBuffer);
 	if (FAILED(hr)) {
 		MessageBox(0, L"CreateBuffer(g_pIndexBuffer) Failed!", 0, 0);
@@ -442,7 +447,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//高速化するならマテリアルで分けてDrawを呼ぶ回数を減らすといい…
 
 		//g_pImmediateContext->Draw(ARRAYSIZE(vertices),0);			//頂点数と何番目から描画するか
-		g_pImmediateContext->DrawIndexed(ARRAYSIZE(indices),0,0);	//インデックスバッファ時の描画
+		g_pImmediateContext->DrawIndexed(indices.size(),0,0);	//インデックスバッファ時の描画
 
 		g_pSwapChain->Present(1,0);			//バックバッファに描画された内容をフロントバッファに
 
