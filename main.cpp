@@ -100,7 +100,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//--------------------ウィンドウクラスの登録-------------------------//
 	RegisterClass(&wc);
-
+	
 	//------------------------ウィンドウの生成--------------------------//
 	g_hwnd = CreateWindow(L"Title", L"Title", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 0, 0, 640, 480, 0, 0, wc.hInstance, 0);
 
@@ -263,10 +263,37 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//--------------------頂点バッファの生成--------------------//
 	Vertex vertices[] = {
 		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP
-		{-0.5f,+0.5f,+0.0f},//0
-		{+0.5f,+0.5f,+0.0f},//1
-		{-0.5f,-0.5f,+0.0f},//2
-		{+0.5f,-0.5f,+0.0f},//3
+		//手前
+		{-0.5f,+0.5f,-0.5f},//0
+		{+0.5f,+0.5f,-0.5f},//1
+		{-0.5f,-0.5f,-0.5f},//2
+		{+0.5f,-0.5f,-0.5f},//3
+
+		//右側面
+		{+0.5f,+0.5f,-0.5f},//4
+		{+0.5f,+0.5f,+0.5f},//5
+		{+0.5f,-0.5f,-0.5f},//6
+		{+0.5f,-0.5f,+0.5f},//7
+		//左側面
+		{-0.5f,+0.5f,+0.5f},//8
+		{-0.5f,+0.5f,-0.5f},//9
+		{-0.5f,-0.5f,+0.5f},//10
+		{-0.5f,-0.5f,-0.5f},//11
+		//奥
+		{+0.5f,+0.5f,+0.5f},//12
+		{-0.5f,+0.5f,+0.5f},//13
+		{+0.5f,-0.5f,+0.5f},//14
+		{-0.5f,-0.5f,+0.5f},//15
+		//上
+		{-0.5f,+0.5f,+0.5f},//16
+		{+0.5f,+0.5f,+0.5f},//17
+		{-0.5f,+0.5f,-0.5f},//18
+		{+0.5f,+0.5f,-0.5f},//19
+		//下
+		{-0.5f,-0.5f,-0.5f},//16
+		{+0.5f,-0.5f,-0.5f},//17
+		{-0.5f,-0.5f,+0.5f},//18
+		{+0.5f,-0.5f,+0.5f},//19
 
 		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 		//{+0.5f,-0.5f,+0.0f},//左下
@@ -291,7 +318,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//--------------------インデックスバッファの作成--------------------//
 	uint16_t indices[] = {
 		0,1,2,
-		2,1,3
+		2,1,3,
+
+		4,5,6,
+		6,5,7,
+
+		8,9,10,
+		10,9,11,
+
+		12,13,14,
+		14,13,15,
+
+		16,17,18,
+		18,17,19,
+
+		20,21,22,
+		22,21,23
 	};
 	D3D11_BUFFER_DESC ibDesc = {};
 	ibDesc.ByteWidth = sizeof(vertices);
@@ -316,15 +358,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//--------------------コンスタントバッファの生成--------------------//
 	ConstantBuffer cb;
 
-	//cb.world = DirectX::XMMatrixIdentity();
-	auto t  = DirectX::XMMatrixTranslation(1.0f,0.0f,0.0f);
-	auto rx = DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(45.0f));
-	auto ry = DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(45.0f));
-	auto rz = DirectX::XMMatrixRotationZ(DirectX::XMConvertToRadians(45.0f));
-	auto s = DirectX::XMMatrixScaling(2.0f,2.0f,2.0f);
-	cb.world =  s * rz * t;//SRT(Scale Rotation Translation)
+	cb.world = DirectX::XMMatrixIdentity();
+	//auto t  = DirectX::XMMatrixTranslation(1.0f,0.0f,0.0f);
+	//auto rx = DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(45.0f));
+	//auto ry = DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(45.0f));
+	//auto rz = DirectX::XMMatrixRotationZ(DirectX::XMConvertToRadians(45.0f));
+	//auto s = DirectX::XMMatrixScaling(2.0f,2.0f,2.0f);
+	//cb.world =  s * rz * t;//SRT(Scale Rotation Translation)
 
-	DirectX::XMVECTOR eye = { 0.0f,0.0f,-3.0f };
+	DirectX::XMVECTOR eye = { -4.0f,3.0f,+3.0f };
 	DirectX::XMVECTOR at =  { 0.0f,0.0f, 0.0f };
 	DirectX::XMVECTOR up =  { 0.0f,1.0f, 0.0f };
 	cb.view = DirectX::XMMatrixLookAtLH(eye,at,up);
@@ -372,6 +414,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//メッセージチェック
 	while (isRunning(&msg))
 	{
+		//更新処理
+		static float radian = 0.0f;
+		auto ry = DirectX::XMMatrixRotationX(radian);
+		cb.world = DirectX::XMMatrixTranspose(ry);
+		g_pImmediateContext->UpdateSubresource(g_pConstantBuffer,0,0,&cb,0,0);
+		radian += DirectX::XMConvertToRadians(1.0f);
+
 		g_pImmediateContext->ClearRenderTargetView(g_renderTargetView, color);
 		//コンテキストにレンダーターゲットを設定する
 		g_pImmediateContext->OMSetRenderTargets(1,&g_renderTargetView,nullptr);
@@ -427,14 +476,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	case WM_DESTROY:
 		//終了処理
 		PostQuitMessage(0);
-		return 0;
+		break;
 		//ESCキー押された時
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
 		case VK_ESCAPE:
-			PostMessage(hwnd, WM_DESTROY, 0, 0);
-			return 0;
+			PostMessage(hwnd, WM_CLOSE, 0, 0);
+			break;
 		}
 	default:
 		return DefWindowProc(hwnd, msg, wParam, lParam);
