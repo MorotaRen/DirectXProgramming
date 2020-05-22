@@ -9,6 +9,7 @@
 #include <vector>
 #include <fstream>
 #include <DirectXMath.h>
+using namespace DirectX;
 
 //----------------------------------先に宣言------------------------------------//
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -41,7 +42,9 @@ ID3D11Buffer				*g_pConstantBuffer = nullptr;			//コンスタントバッファ
 //----------------------------------頂点データ----------------------------------//
 struct Vertex
 {
-	float x, y, z;
+	//float x, y, z;
+	XMFLOAT3 position;  //頂点座標
+	XMFLOAT3 normal;    //法線ベクトル
 };
 
 //----------------コンスタントバッファの元データ(16バイト区切り)---------------------//
@@ -261,49 +264,65 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	///ARRAYSIZEは配列の要素数を返してくれるぞ///
 
 	//--------------------頂点バッファの生成--------------------//
-	Vertex vertices[] = {
-		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP
-		//手前
-		{-0.5f,+0.5f,-0.5f},//0
-		{+0.5f,+0.5f,-0.5f},//1
-		{-0.5f,-0.5f,-0.5f},//2
-		{+0.5f,-0.5f,-0.5f},//3
+	std::vector<XMFLOAT3> BasePos = {
+		{-0.5f,  0.5f,  -0.5f},  //0
+		{ 0.5f,  0.5f,  -0.5f},  //1
+		{-0.5f, -0.5f,  -0.5f},  //2
+		{ 0.5f, -0.5f,  -0.5f},  //3
 
-		//右側面
-		{+0.5f,+0.5f,-0.5f},//4
-		{+0.5f,+0.5f,+0.5f},//5
-		{+0.5f,-0.5f,-0.5f},//6
-		{+0.5f,-0.5f,+0.5f},//7
-		//左側面
-		{-0.5f,+0.5f,+0.5f},//8
-		{-0.5f,+0.5f,-0.5f},//9
-		{-0.5f,-0.5f,+0.5f},//10
-		{-0.5f,-0.5f,-0.5f},//11
-		//奥
-		{+0.5f,+0.5f,+0.5f},//12
-		{-0.5f,+0.5f,+0.5f},//13
-		{+0.5f,-0.5f,+0.5f},//14
-		{-0.5f,-0.5f,+0.5f},//15
-		//上
-		{-0.5f,+0.5f,+0.5f},//16
-		{+0.5f,+0.5f,+0.5f},//17
-		{-0.5f,+0.5f,-0.5f},//18
-		{+0.5f,+0.5f,-0.5f},//19
-		//下
-		{-0.5f,-0.5f,-0.5f},//16
-		{+0.5f,-0.5f,-0.5f},//17
-		{-0.5f,-0.5f,+0.5f},//18
-		{+0.5f,-0.5f,+0.5f},//19
-
-		//D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
-		//{+0.5f,-0.5f,+0.0f},//左下
-		//{-0.5f,-0.5f,+0.0f},//右下
-		//{+0.5f,+0.5f,+0.0f},//左上
-		//{-0.5f,-0.5f,+0.0f},//右下
-		//{-0.5f,+0.5f,+0.0f},//右上
-		//{+0.5f,+0.5f,+0.0f} //左上
+		{+0.5f, +0.5f,  +0.5f},  //4
+		{-0.5f, +0.5f,  +0.5f},  //5
+		{+0.5f, -0.5f,  +0.5f},  //6
+		{-0.5f, -0.5f,  +0.5f}   //7
 	};
 
+	std::vector<XMFLOAT3>baseNrm = {  //法線(Normal)
+		{0.0f,0.0f,-1.0f}, //手前用
+		{+1.0f,0.0f,0.0f},  //右側用
+		{-1.0f,0.0f,0.0f}, //左側用
+		{0.0f,0.0f,+1.0f},  //奥側用
+		{0.0f,+1.0f,0.0f},  //上側用
+		{0.0f,-1.0f,1.0f},  //下側用
+
+	};
+	// 頂点バッファを生成する
+	Vertex vertices[] = {
+		// 手前のポリゴン
+		{BasePos[0],baseNrm[0]}, // 0
+		{BasePos[1],baseNrm[0]}, // 1
+		{BasePos[2],baseNrm[0]}, // 2
+		{BasePos[3],baseNrm[0]}, // 3
+
+		// 向かって右側面
+		{BasePos[1],baseNrm[1]}, // 4
+		{BasePos[4],baseNrm[1]}, // 5
+		{BasePos[3],baseNrm[1]}, // 6
+		{BasePos[5],baseNrm[1]}, // 7
+
+		// 向かって左側面
+		{BasePos[5],baseNrm[2]}, // 8
+		{BasePos[0],baseNrm[2]}, // 9
+		{BasePos[7],baseNrm[2]}, //10
+		{BasePos[2],baseNrm[2]}, //11
+
+		// 向かって奥面
+		{BasePos[4],baseNrm[3]}, //12
+		{BasePos[5],baseNrm[3]}, //13
+		{BasePos[6],baseNrm[3]}, //14
+		{BasePos[7],baseNrm[3]}, //15
+
+		// 上面
+		{BasePos[5],baseNrm[4]}, //16
+		{BasePos[4],baseNrm[4]}, //17
+		{BasePos[0],baseNrm[4]}, //18
+		{BasePos[1],baseNrm[4]}, //19
+
+		// 下面
+		{BasePos[2],baseNrm[5]},  //20
+		{BasePos[3],baseNrm[5]},  //21
+		{BasePos[7],baseNrm[5]},  //22
+		{BasePos[6],baseNrm[5]},  //23
+	};
 	//--------------------頂点バッファの作成--------------------//
 	D3D11_BUFFER_DESC vbDesc = {};
 	vbDesc.ByteWidth = sizeof(vertices);
