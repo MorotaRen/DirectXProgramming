@@ -246,14 +246,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	if (FAILED(hr)) {
 		MessageBox(0, L"CreatePixelShader Failed!", 0, 0);
 	}
-
+	
 	//--------------------インプットレイアウトを生成する--------------------//
 	/// 頂点は...
 	/// 座標　法線ベクトル　UV座標　接線ベクトル　バイノーマル　スキンウェイト　...色々持ってる
 
 	/// POSSOPN	：どれに対応してるのか
 	/// DXGI...	：RGBそれぞれ4バイト分のデータのfloat
-	D3D11_INPUT_ELEMENT_DESC inputElements[] = { { "POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 } };
+	D3D11_INPUT_ELEMENT_DESC inputElements[] = { 
+		{ "POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 } ,
+		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
 	g_pd3dDevice->CreateInputLayout(
 		inputElements, ARRAYSIZE(inputElements),
 		&vsByteCode->front(), vsByteCode->size(),
