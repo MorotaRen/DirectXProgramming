@@ -4,6 +4,9 @@
 #include <d3d11_4.h>
 #pragma comment(lib,"d3d11.lib")
 
+//-------------------------------------------Texライブラリ--------------------------------------------//
+#include"DirectXTex.h"
+#pragma comment(lib,"DirectXTex.lib")
 //-------------------------------------------ライブラリ--------------------------------------------//
 #include <string>
 #include <vector>
