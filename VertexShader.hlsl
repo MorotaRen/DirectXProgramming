@@ -25,7 +25,7 @@ float4 pos = mul(float4(vsin.pos,1.0f), wvp);
 float3 vLight = { 1.0f,-1.0f,0.0f };
 float3 L = normalize(-vLight);
 float3 N = mul(vsin.normal,(float3x3)world);
-float4 color = float4(1, 1, 1, 1) * dot(L, N);
+float4 color = float4(1, 0, 0, 1) * dot(L, N);
 color.a = 1.0f;
 VSOut vsout;
 vsout.pos = pos;
