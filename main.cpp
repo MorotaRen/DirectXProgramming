@@ -48,6 +48,7 @@ struct Vertex
 	//float x, y, z;
 	XMFLOAT3 position;  //頂点座標
 	XMFLOAT3 normal;    //法線ベクトル
+	XMFLOAT2 texcord;	//UV座標
 };
 
 //----------------コンスタントバッファの元データ(16バイト区切り)---------------------//
@@ -291,13 +292,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{0.0f,-1.0f,1.0f},  //下側用
 
 	};
+	std::vector<XMFLOAT2>baseUV = {
+		{0.0f,0.0f},
+		{1.0f,0.0f},
+		{0.0f,1.0f},
+		{1.0f,1.0f}
+	};
+
 	// 頂点バッファを生成する
 	Vertex vertices[] = {
 		// 手前のポリゴン
-		{BasePos[0],baseNrm[0]}, // 0
-		{BasePos[1],baseNrm[0]}, // 1
-		{BasePos[2],baseNrm[0]}, // 2
-		{BasePos[3],baseNrm[0]}, // 3
+		{BasePos[0],baseNrm[0],baseUV[0]}, // 0
+		{BasePos[1],baseNrm[0],baseUV[1]}, // 1
+		{BasePos[2],baseNrm[0],baseUV[2]}, // 2
+		{BasePos[3],baseNrm[0],baseUV[3]}, // 3
 
 		// 向かって右側面
 		{BasePos[1],baseNrm[1]}, // 4
@@ -421,8 +429,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"CreateBuffer(g_pConstantBuffer) Failed!", 0, 0);
 	}
 
-
-
+	//--------------------テクスチャの読み込み--------------------//
+	DirectX::TexMetadata metadata;
+	DirectX::ScratchImage image;
+	hr = DirectX::LoadFromWICFile(L"Test_Tex.png",0,&metadata,image);
+	if (FAILED(hr)) {
+		MessageBox(0,L"FAILED LoadFromWICFile",0,0);
+	}
 	//--------------------以下メッセージループ--------------------//
 	/// GetMessage(LPMSG lpMsg , HWND hWnd , UINT wMsgFilterMin , UINT wMsgFilterMax);
 	/// LPMSG			:MSG構造体のポインタを渡す
