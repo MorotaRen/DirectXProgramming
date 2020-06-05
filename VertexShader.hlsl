@@ -5,6 +5,7 @@ cbuffer C0 {
 	float4x4 view;		//ビュー行列(三次元上のカメラの位置・回転)
 	float4x4 projection;//射影行列(プロジェクション行列：カメラの画角・アスペクト比(画面比率)・ニアとファー)
 	float4 c0_color;//カラー
+	float4 time;
 };
 struct VSIn {
 	float3 pos : POSITION;
@@ -33,6 +34,7 @@ color.a = 1.0f;
 VSOut vsout;
 vsout.pos = pos;
 vsout.color = color;
+vsin.tex.x = vsin.tex.x + time.x;
 vsout.tex = vsin.tex;
 
 return vsout;

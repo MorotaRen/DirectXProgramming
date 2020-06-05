@@ -43,6 +43,8 @@ ID3D11Buffer				*g_pVertexBuffer = nullptr;				//バーテックスバッファ
 ID3D11Buffer				*g_pIndexBuffer = nullptr;				//インデックスバッファ
 ID3D11Buffer				*g_pConstantBuffer = nullptr;			//コンスタントバッファ
 
+float g_scale = 5.0f;
+
 //----------------------------------頂点データ----------------------------------//
 struct Vertex
 {
@@ -59,6 +61,7 @@ struct ConstantBuffer
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX projection;
 	DirectX::XMFLOAT4 color;
+	DirectX::XMFLOAT4 time;
 	//16区切りにしないといけないので
 	//float time;//4byte
 	//float dummy[3]//12byte
@@ -298,16 +301,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{0.0f,0.0f},
 		{1.0f,0.0f},
 		{0.0f,1.0f},
-		{1.0f,1.0f}
+		{1.0f,1.0f},
+
+		{0.0f,0.0f},
+		{g_scale,0.0f},
+		{0.0f,1.0f},
+		{g_scale,1.0f}
 	};
 
 	// 頂点バッファを生成する
 	Vertex vertices[] = {
 		// 手前のポリゴン
-		{BasePos[0],baseNrm[0],baseUV[0]}, // 0
-		{BasePos[1],baseNrm[0],baseUV[1]}, // 1
-		{BasePos[2],baseNrm[0],baseUV[2]}, // 2
-		{BasePos[3],baseNrm[0],baseUV[3]}, // 3
+		{BasePos[0],baseNrm[0],baseUV[4]}, // 0
+		{BasePos[1],baseNrm[0],baseUV[5]}, // 1
+		{BasePos[2],baseNrm[0],baseUV[6]}, // 2
+		{BasePos[3],baseNrm[0],baseUV[7]}, // 3
 
 		// 向かって右側面
 		{BasePos[1],baseNrm[1],baseUV[0]}, // 4
@@ -322,22 +330,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{BasePos[2],baseNrm[2],baseUV[3]}, //11
 
 		// 向かって奥面
-		{BasePos[4],baseNrm[3],baseUV[0]}, //12
-		{BasePos[5],baseNrm[3],baseUV[1]}, //13
-		{BasePos[6],baseNrm[3],baseUV[2]}, //14
-		{BasePos[7],baseNrm[3],baseUV[3]}, //15
+		{BasePos[4],baseNrm[3],baseUV[4]}, //12
+		{BasePos[5],baseNrm[3],baseUV[5]}, //13
+		{BasePos[6],baseNrm[3],baseUV[6]}, //14
+		{BasePos[7],baseNrm[3],baseUV[7]}, //15
 
 		// 上面
-		{BasePos[5],baseNrm[4],baseUV[0]}, //16
-		{BasePos[4],baseNrm[4],baseUV[1]}, //17
-		{BasePos[0],baseNrm[4],baseUV[2]}, //18
-		{BasePos[1],baseNrm[4],baseUV[3]}, //19
+		{BasePos[5],baseNrm[4],baseUV[4]}, //16
+		{BasePos[4],baseNrm[4],baseUV[5]}, //17
+		{BasePos[0],baseNrm[4],baseUV[6]}, //18
+		{BasePos[1],baseNrm[4],baseUV[7]}, //19
 
 		// 下面
-		{BasePos[2],baseNrm[5],baseUV[0]},  //20
-		{BasePos[3],baseNrm[5],baseUV[1]},  //21
-		{BasePos[7],baseNrm[5],baseUV[2]},  //22
-		{BasePos[6],baseNrm[5],baseUV[3]},  //23
+		{BasePos[2],baseNrm[5],baseUV[4]},  //20
+		{BasePos[3],baseNrm[5],baseUV[5]},  //21
+		{BasePos[7],baseNrm[5],baseUV[6]},  //22
+		{BasePos[6],baseNrm[5],baseUV[7]},  //23
 	};
 	//--------------------頂点バッファの作成--------------------//
 	D3D11_BUFFER_DESC vbDesc = {};
@@ -420,6 +428,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	cb.world = DirectX::XMMatrixTranspose(cb.world);
 	cb.view = DirectX::XMMatrixTranspose(cb.view);
 	cb.projection = DirectX::XMMatrixTranspose(cb.projection);
+	cb.time = {};
 	//LH,RHは右手座標系か左手座標系か…
 	D3D11_BUFFER_DESC cbDesc = {};
 	cbDesc.ByteWidth = sizeof(cb);
@@ -434,9 +443,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//サンプラーステート
 	D3D11_SAMPLER_DESC samplerdesc = {};
 	//フィルターでぼかしを入れる
-	samplerdesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerdesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;//POINTだとドットが目立つ。LINEARだとぼける
 	//横方向に対するモード
-	samplerdesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerdesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;//WRAPは繰り返し。CLAMPは板ポリ。MIRRORは繰り返し
 	samplerdesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerdesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerdesc.MaxAnisotropy = 1;
@@ -450,11 +459,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	//--------------------テクスチャの読み込み--------------------//
+	std::wstring textureFileName = L"Plane.tga";
 	DirectX::TexMetadata metadata;
 	DirectX::ScratchImage image;
-	hr = DirectX::LoadFromWICFile(L"Test_Tex.png",0,&metadata,image);
+	hr = DirectX::LoadFromWICFile(textureFileName.c_str(),0,&metadata,image);
 	if (FAILED(hr)) {
-		MessageBox(0,L"FAILED LoadFromWICFile",0,0);
+		hr = LoadFromTGAFile(textureFileName.c_str(), &metadata, image);
+		if (FAILED(hr)) {
+			MessageBox(0,textureFileName.c_str(),0,0);
+		}
 	}
 	ID3D11ShaderResourceView *shaderResourceView = nullptr;
 	//シェーダーリソースビュー
@@ -486,16 +499,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	while (isRunning(&msg))
 	{
 		//更新処理
+		static float rate = 0.0f;
 		static float radian = 0.0f;
+		auto s = DirectX::XMMatrixScaling(g_scale,1.0f,1.0f);
 		auto ry = DirectX::XMMatrixRotationX(radian);
-		cb.world = DirectX::XMMatrixTranspose(ry);
+		cb.world = DirectX::XMMatrixTranspose(ry * s);
+		cb.time.x += 0.016f;
 		//auto oldtime = clock();
 		//auto deltatime = clock();
 		//r = sin(deltatime);
 		cb.color = DirectX::XMFLOAT4(1.0f,1.0f,1.0f,1.0);
 		g_pImmediateContext->UpdateSubresource(g_pConstantBuffer,0,0,&cb,0,0);
 		radian += DirectX::XMConvertToRadians(1.0f);
-	
+		
 		g_pImmediateContext->ClearRenderTargetView(g_renderTargetView, color);
 		//コンテキストにレンダーターゲットを設定する
 		g_pImmediateContext->OMSetRenderTargets(1,&g_renderTargetView,nullptr);
