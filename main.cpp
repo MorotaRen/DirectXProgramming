@@ -431,6 +431,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MessageBox(0, L"CreateBuffer(g_pConstantBuffer) Failed!", 0, 0);
 	}
 
+	//サンプラーステート
+	D3D11_SAMPLER_DESC samplerdesc = {};
+	//フィルターでぼかしを入れる
+	samplerdesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	//横方向に対するモード
+	samplerdesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerdesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerdesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerdesc.MaxAnisotropy = 1;
+	samplerdesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerdesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	ID3D11SamplerState* samplerState = nullptr;
+	hr = g_pd3dDevice->CreateSamplerState(&samplerdesc,&samplerState);
+	if (FAILED(hr)) {
+		MessageBox(0, L"CreateSamplerState Failed!", 0, 0);
+	}
+
 	//--------------------テクスチャの読み込み--------------------//
 	DirectX::TexMetadata metadata;
 	DirectX::ScratchImage image;
@@ -497,6 +515,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		g_pImmediateContext->PSSetShader(g_pPixelShader, 0,0); 
 	
 		g_pImmediateContext->PSSetShaderResources(0,1,&shaderResourceView);
+		g_pImmediateContext->PSSetSamplers(0,1,&samplerState);
+
 		//高速化するならマテリアルで分けてDrawを呼ぶ回数を減らすといい…
 
 		//g_pImmediateContext->Draw(ARRAYSIZE(vertices),0);			//頂点数と何番目から描画するか
