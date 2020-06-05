@@ -12,6 +12,7 @@
 #include <vector>
 #include <fstream>
 #include <DirectXMath.h>
+#include <ctime>
 using namespace DirectX;
 
 //----------------------------------先に宣言------------------------------------//
@@ -57,7 +58,7 @@ struct ConstantBuffer
 	DirectX::XMMATRIX world;
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX projection;
-
+	DirectX::XMFLOAT4 color;
 	//16区切りにしないといけないので
 	//float time;//4byte
 	//float dummy[3]//12byte
@@ -258,8 +259,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	/// POSSOPN	：どれに対応してるのか
 	/// DXGI...	：RGBそれぞれ4バイト分のデータのfloat
 	D3D11_INPUT_ELEMENT_DESC inputElements[] = { 
-		{ "POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 } ,
-		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
+		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 } ,
+		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
 	g_pd3dDevice->CreateInputLayout(
 		inputElements, ARRAYSIZE(inputElements),
@@ -308,34 +310,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{BasePos[3],baseNrm[0],baseUV[3]}, // 3
 
 		// 向かって右側面
-		{BasePos[1],baseNrm[1]}, // 4
-		{BasePos[4],baseNrm[1]}, // 5
-		{BasePos[3],baseNrm[1]}, // 6
-		{BasePos[5],baseNrm[1]}, // 7
+		{BasePos[1],baseNrm[1],baseUV[0]}, // 4
+		{BasePos[4],baseNrm[1],baseUV[1]}, // 5
+		{BasePos[3],baseNrm[1],baseUV[2]}, // 6
+		{BasePos[5],baseNrm[1],baseUV[3]}, // 7
 
 		// 向かって左側面
-		{BasePos[5],baseNrm[2]}, // 8
-		{BasePos[0],baseNrm[2]}, // 9
-		{BasePos[7],baseNrm[2]}, //10
-		{BasePos[2],baseNrm[2]}, //11
+		{BasePos[5],baseNrm[2],baseUV[0]}, // 8
+		{BasePos[0],baseNrm[2],baseUV[1]}, // 9
+		{BasePos[7],baseNrm[2],baseUV[2]}, //10
+		{BasePos[2],baseNrm[2],baseUV[3]}, //11
 
 		// 向かって奥面
-		{BasePos[4],baseNrm[3]}, //12
-		{BasePos[5],baseNrm[3]}, //13
-		{BasePos[6],baseNrm[3]}, //14
-		{BasePos[7],baseNrm[3]}, //15
+		{BasePos[4],baseNrm[3],baseUV[0]}, //12
+		{BasePos[5],baseNrm[3],baseUV[1]}, //13
+		{BasePos[6],baseNrm[3],baseUV[2]}, //14
+		{BasePos[7],baseNrm[3],baseUV[3]}, //15
 
 		// 上面
-		{BasePos[5],baseNrm[4]}, //16
-		{BasePos[4],baseNrm[4]}, //17
-		{BasePos[0],baseNrm[4]}, //18
-		{BasePos[1],baseNrm[4]}, //19
+		{BasePos[5],baseNrm[4],baseUV[0]}, //16
+		{BasePos[4],baseNrm[4],baseUV[1]}, //17
+		{BasePos[0],baseNrm[4],baseUV[2]}, //18
+		{BasePos[1],baseNrm[4],baseUV[3]}, //19
 
 		// 下面
-		{BasePos[2],baseNrm[5]},  //20
-		{BasePos[3],baseNrm[5]},  //21
-		{BasePos[7],baseNrm[5]},  //22
-		{BasePos[6],baseNrm[5]},  //23
+		{BasePos[2],baseNrm[5],baseUV[0]},  //20
+		{BasePos[3],baseNrm[5],baseUV[1]},  //21
+		{BasePos[7],baseNrm[5],baseUV[2]},  //22
+		{BasePos[6],baseNrm[5],baseUV[3]},  //23
 	};
 	//--------------------頂点バッファの作成--------------------//
 	D3D11_BUFFER_DESC vbDesc = {};
@@ -436,6 +438,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	if (FAILED(hr)) {
 		MessageBox(0,L"FAILED LoadFromWICFile",0,0);
 	}
+	ID3D11ShaderResourceView *shaderResourceView = nullptr;
+	//シェーダーリソースビュー
+	hr = CreateShaderResourceView(g_pd3dDevice,image.GetImages(),
+							image.GetImageCount(),metadata,&shaderResourceView);
+	if (FAILED(hr)) {
+		MessageBox(0, L"FAILED CreateShaderResourceView", 0, 0);
+	}
 	//--------------------以下メッセージループ--------------------//
 	/// GetMessage(LPMSG lpMsg , HWND hWnd , UINT wMsgFilterMin , UINT wMsgFilterMax);
 	/// LPMSG			:MSG構造体のポインタを渡す
@@ -454,6 +463,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	MSG msg;
 	//背景色
 	float color[] = { 0.098f,0.098f,0.439f,1.0f };
+	float r = 0;
 	//メッセージチェック
 	while (isRunning(&msg))
 	{
@@ -461,9 +471,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		static float radian = 0.0f;
 		auto ry = DirectX::XMMatrixRotationX(radian);
 		cb.world = DirectX::XMMatrixTranspose(ry);
+		//auto oldtime = clock();
+		//auto deltatime = clock();
+		//r = sin(deltatime);
+		cb.color = DirectX::XMFLOAT4(1.0f,1.0f,1.0f,1.0);
 		g_pImmediateContext->UpdateSubresource(g_pConstantBuffer,0,0,&cb,0,0);
 		radian += DirectX::XMConvertToRadians(1.0f);
-
+	
 		g_pImmediateContext->ClearRenderTargetView(g_renderTargetView, color);
 		//コンテキストにレンダーターゲットを設定する
 		g_pImmediateContext->OMSetRenderTargets(1,&g_renderTargetView,nullptr);
@@ -480,8 +494,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		g_pImmediateContext->VSSetConstantBuffers(0,1,&g_pConstantBuffer);//(最初,何番目までか,バッファ)
 		//DXGI_FORMAT_R16_UINT R16...頂点配列の型。16bitの型なのか32bitの型なのか
 		g_pImmediateContext->VSSetShader(g_pVertexShader,0,0);
-		g_pImmediateContext->PSSetShader(g_pPixelShader, 0,0);
-
+		g_pImmediateContext->PSSetShader(g_pPixelShader, 0,0); 
+	
+		g_pImmediateContext->PSSetShaderResources(0,1,&shaderResourceView);
 		//高速化するならマテリアルで分けてDrawを呼ぶ回数を減らすといい…
 
 		//g_pImmediateContext->Draw(ARRAYSIZE(vertices),0);			//頂点数と何番目から描画するか
