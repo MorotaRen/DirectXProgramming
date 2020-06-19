@@ -5,7 +5,8 @@ cbuffer C0 {
 	float4x4 view;		//ビュー行列(三次元上のカメラの位置・回転)
 	float4x4 projection;//射影行列(プロジェクション行列：カメラの画角・アスペクト比(画面比率)・ニアとファー)
 	float4 c0_color;//カラー
-	float4 time;
+	float3 lightDirection;
+	float time;
 };
 struct VSIn {
 	float3 pos : POSITION;
@@ -26,7 +27,7 @@ float4x4 wvp = mul(mul(world,view),projection);
 float4 pos = mul(float4(vsin.pos,1.0f), wvp);
 
 //陰影の計算
-float3 vLight = { 1.0f,-1.0f,0.0f };
+float3 vLight = lightDirection;
 float3 L = normalize(-vLight);
 float3 N = mul(vsin.normal,(float3x3)world);
 float4 color = c0_color * dot(L, N);
@@ -34,7 +35,7 @@ color.a = 1.0f;
 VSOut vsout;
 vsout.pos = pos;
 vsout.color = color;
-vsin.tex.x = vsin.tex.x + time.x;
+vsin.tex.x = vsin.tex.x + time;
 vsout.tex = vsin.tex;
 
 return vsout;

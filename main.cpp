@@ -61,7 +61,9 @@ struct ConstantBuffer
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX projection;
 	DirectX::XMFLOAT4 color;
-	DirectX::XMFLOAT4 time;
+	DirectX::XMFLOAT3 lightDirection;
+	float time;
+
 	//16区切りにしないといけないので
 	//float time;//4byte
 	//float dummy[3]//12byte
@@ -428,7 +430,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	cb.world = DirectX::XMMatrixTranspose(cb.world);
 	cb.view = DirectX::XMMatrixTranspose(cb.view);
 	cb.projection = DirectX::XMMatrixTranspose(cb.projection);
-	cb.time = {};
+	cb.lightDirection = XMFLOAT3(0, -1, 0.5f);
+	cb.time = 0;
 	//LH,RHは右手座標系か左手座標系か…
 	D3D11_BUFFER_DESC cbDesc = {};
 	cbDesc.ByteWidth = sizeof(cb);
@@ -439,6 +442,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	if (FAILED(hr)) {
 		MessageBox(0, L"CreateBuffer(g_pConstantBuffer) Failed!", 0, 0);
 	}
+	//ブレンドステート
+	/*
+	Src:Souce			元
+	Dest:destination	先
+	Op:operator			演算子
+	
+	*/
+	D3D11_BLEND_DESC blendDesc = {  };
+	auto& rt = blendDesc.RenderTarget[0];
+	rt.BlendEnable = true;
+	//カラーチャネル
+	//rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	//rt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	rt.SrcBlend = D3D11_BLEND_ONE;
+	rt.DestBlend = D3D11_BLEND_ONE;
+	rt.BlendOp = D3D11_BLEND_OP_ADD;
+
+
+	//アルファチャネル
+	//rt.SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+	//rt.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+	rt.SrcBlendAlpha = D3D11_BLEND_ONE;
+	rt.DestBlendAlpha = D3D11_BLEND_ONE;
+	rt.BlendOpAlpha	= D3D11_BLEND_OP_ADD;
+
+	rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	ID3D11BlendState* blendState = nullptr;
+
+	g_pd3dDevice->CreateBlendState(&blendDesc,&blendState);
+
 
 	//サンプラーステート
 	D3D11_SAMPLER_DESC samplerdesc = {};
@@ -459,7 +492,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	//--------------------テクスチャの読み込み--------------------//
-	std::wstring textureFileName = L"Plane.tga";
+	//std::wstring textureFileName = L"traceAlpha.png";
+	std::wstring textureFileName = L"explode.bmp";
 	DirectX::TexMetadata metadata;
 	DirectX::ScratchImage image;
 	hr = DirectX::LoadFromWICFile(textureFileName.c_str(),0,&metadata,image);
@@ -504,17 +538,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		auto s = DirectX::XMMatrixScaling(g_scale,1.0f,1.0f);
 		auto ry = DirectX::XMMatrixRotationX(radian);
 		cb.world = DirectX::XMMatrixTranspose(ry * s);
-		cb.time.x += 0.016f;
+		cb.time += 0.016f;
 		//auto oldtime = clock();
 		//auto deltatime = clock();
 		//r = sin(deltatime);
 		cb.color = DirectX::XMFLOAT4(1.0f,1.0f,1.0f,1.0);
 		g_pImmediateContext->UpdateSubresource(g_pConstantBuffer,0,0,&cb,0,0);
-		radian += DirectX::XMConvertToRadians(1.0f);
+		//radian += DirectX::XMConvertToRadians(1.0f);
 		
 		g_pImmediateContext->ClearRenderTargetView(g_renderTargetView, color);
 		//コンテキストにレンダーターゲットを設定する
 		g_pImmediateContext->OMSetRenderTargets(1,&g_renderTargetView,nullptr);
+		g_pImmediateContext->OMSetBlendState(blendState, nullptr,0xFFFFFFF);
 		//描画処理
 		UINT stride = sizeof(Vertex);//頂点一個のサイズ
 		UINT offset = 0;
